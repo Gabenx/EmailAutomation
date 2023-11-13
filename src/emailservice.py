@@ -3,8 +3,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import dotenv_values
 
-
-
 config = dotenv_values(".env")
 
 smtp_server = config['SMTP_SERVER']
@@ -12,7 +10,6 @@ smtp_port = config['SMTP_PORT']
 smtp_username = config['SMTP_USER']
 smtp_password = config['SMTP_PASSWORD']
 sender_email = config['SENDER_EMAIL']
-# message = f'Subject: {subject}\n\n{body}'
 
 
  
@@ -56,7 +53,7 @@ def sendEmail(toEmail : str, toName : str, shippingYear : str, shippingMonth :st
   try: 
       with smtplib.SMTP(smtp_server, smtp_port) as smtp:
           smtp.starttls()
-          smtp.login(smtp_username, smtp_password)
+          smtp.login(user=smtp_username, password= smtp_password)
           smtp.sendmail(sender_email, toEmail, message.as_string())
       return "Message sent"
   except Exception as e:
