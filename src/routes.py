@@ -7,6 +7,8 @@ from pymongo.database import Database
 import datetime
 import pandas as pd
 
+from emailservice import sendEmail
+
 #Configure the router to export it to the main file
 router = APIRouter()
 
@@ -51,7 +53,11 @@ def generateCompanyClientInfo(companyClientName : str, identificationNumber : st
     
     return result
     
+# @router.get("/testEmail")
 
+# def testEmail(request: Request):
+#     response = sendEmail()
+#     return response
 
 @router.get("/sendAlarm")
 def sendAlarm(request: Request):
@@ -103,6 +109,9 @@ def sendAlarm(request: Request):
             }
         },
         {
+            '$limit': 5
+        },
+        {
             '$lookup': {
                 "from": 'Clients',
                 "localField": "_id.order_vendor_dbname",
@@ -115,7 +124,7 @@ def sendAlarm(request: Request):
                 '_id': 0,
                 'clientName' : {'$arrayElemAt' : ['$client.name', 0]},
                 'shipping_year': '$_id.shipping_year',
-                'shippong_month': '$_id.shipping_month',
+                'shipping_month': '$_id.shipping_month',
                 'shipping_Id': '$shipping_ids',
                 'clientEmail' : {'$arrayElemAt': ['$client.email', 0]}
             }
@@ -123,12 +132,20 @@ def sendAlarm(request: Request):
     ]
 
     for document in database["Orders"].aggregate(pipelineAlarms):
-        print(document)
+        result = sendEmail(document['clientEmail'], document['clientName'], document['shipping_year'], document['shipping_month'], document['shipping_Id'])
+        print(result)
         alarmsCounter += 1
-    
     print(alarmsCounter)
 
-    return f"There is a total of {alarmsCounter} emails to be sent"
+    # documents = list(database['Orders'].aggregate(pipelineAlarms))
+    # for i in range(3):
+        
+    #     document = documents[i]
+    #     result = sendEmail(document['clientEmail'], document['clientName'], document['shipping_year'], document['shipping_month'], document['shipping_Id'])
+    #     print(result)
+    
+
+    return f"{alarmsCounter} emails have been sent"
 
 @router.get("/initData")
 def initData(request: Request):
