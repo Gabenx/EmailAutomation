@@ -7,32 +7,33 @@ from pymongo.database import Database
 import datetime
 import pandas as pd
 
+#Configure the router to export it to the main file
 router = APIRouter()
 
+#Read the data of the simulated database provided by Rocketfy
 data = pd.read_csv('db_envios_challenge.csv')
+
+#These arrays will be used afterwards to generate fake names for the Clients of the simulated database that don't contain a name already
 
 maleFirstNames = ["Henry","Simeon","Payton","Cortez","Dwayne","Messiah","Austin","Raiden","Marvin","Emerson","Michael","Kamron","Frank","Ivan","Camden","Corbin","Roman","Skylar","Jase","Aron"]
 femaleFirstNames = ["Livia","Brooklynn","Baylee","Khloe","Autumn","Thalia","Azul","Mylee","Nia","Emely","Justine","Itzel","Kyla","Aliza","Jaylyn","Laylah","Marisa","Donna","Sandra","Michaela"]
 lastNames = ["Terrell","Melendez","Petersen","Ibarra","Silva","Reeves","Robinson","Choi","Larson","Kim","Hines","Shelton","Kennedy","Nguyen","Walker","Hampton","Lynch","Goodwin","Cole","Stevenson","Castro","Osborne","Underwood","Leach","Flynn","Sloan","Burch","Tran","Bowers","Chan"]
 
-#Create the regex expressions to be used inside the pipelines
-patternCompanies = r"(\w+)_(\d+)"
-patternNaturalPersons = r"^[a-zA-Z0-9]{24}$"
-patternValidDates = r"^((?:19|20)\d\d)-((?:0[1-9]|1[0-2]))-(?:0[1-9]|[12][0-9]|3[01])$"
+#These regular expressions will be used afterwards to help in the creation of the pipelines and filtering for the MongoDB queries
 
-def generateUserInfo(isMale : bool, identificationNumber : str):
+patternCompanyClients = r"(\w+)_(\d+)" #This pattern will be used to extract the strings with "text_Number" structure found inside "order_vendor_dbname" column, for example "bigcolors_1381618804" 
+patternClients = r"^[a-zA-Z0-9]{24}$" #This pattern will be used to extract the strings with an alphanumerical structure found inside "order_vendor_dbname" column, for example "6465208fbc1391265257ed5d"
+patternValidDates = r"^((?:19|20)\d\d)-((?:0[1-9]|1[0-2]))-(?:0[1-9]|[12][0-9]|3[01])$" #This pattern will be used to extract the dates with 'yyyy-mm-dd' structure found inside "shipping_date" column, for example "2023-06-01"
+
+#This function generates simulated info of a "Client" for the registers that contain alphanumerical values inside the "order_vendor_dbname" column in the simulated data
+def generateClientInfo(isMale : bool, identificationNumber : str):
 
     if(isMale):
-        random_name = random.choice(maleFirstNames)
-        random_lastName = random.choice(lastNames)
+        random_name = random.choice(maleFirstNames) 
     else:
         random_name = random.choice(femaleFirstNames)
-        random_lastName = random.choice(lastNames)
 
-    finalIdentificationNumber = None
-
-    if(identificationNumber != 0):
-        finalIdentificationNumber = identificationNumber
+    random_lastName = random.choice(lastNames)
 
     result = {"name" : " ".join([random_name, random_lastName]), 
               "email" : random_name+random_lastName+"_"+str(random.randint(1,100))+"@gmail.com", 
@@ -41,29 +42,30 @@ def generateUserInfo(isMale : bool, identificationNumber : str):
     
     return result
 
-def generateCompanyInfo(companyName : str, identificationNumber : str):
+#This function generates the info of a "Company Client" for the registers that contain "text_Number" like values inside the "order_vendor_dbname" column in the simulated data
+def generateCompanyClientInfo(companyClientName : str, identificationNumber : str):
 
-    result = {"name" : companyName, 
-              "email" : companyName+"_"+str(random.randint(1,100))+"@gmail.com", 
-              "identificationNumber" : companyName +"_"+ identificationNumber} 
+    result = {"name" : companyClientName, 
+              "email" : companyClientName+"_"+str(random.randint(1,100))+"@gmail.com", 
+              "identificationNumber" : companyClientName +"_"+ identificationNumber} 
     
     return result
     
 
 
-@router.get("/SendAlarm")
+@router.get("/sendAlarm")
 def sendAlarm(request: Request):
 
     #Access to database
     database: Database = request.app.database   
-    counterAlarms = 0
+    alarmsCounter = 0
 
     pipelineAlarms = [
         {
             '$match': {
                 'shipping_date' : {'$regex': patternValidDates},
                 'shipping_status': {"$in": ["cancelled", "returned"]},
-                '$or': [{'order_vendor_dbname': {'$regex': patternCompanies}}, {"order_vendor_dbname": {"$regex": patternNaturalPersons}}]
+                '$or': [{'order_vendor_dbname': {'$regex': patternCompanyClients}}, {"order_vendor_dbname": {"$regex": patternClients}}]
             }
         },
         {
@@ -102,48 +104,47 @@ def sendAlarm(request: Request):
         },
         {
             '$lookup': {
-                "from": 'Users',
+                "from": 'Clients',
                 "localField": "_id.order_vendor_dbname",
                 "foreignField": "identificationNumber",
-                "as": "user"
+                "as": "client"
             }
         },
         {
             '$project':{
                 '_id': 0,
-                'userName' : {'$arrayElemAt' : ['$user.name', 0]},
+                'clientName' : {'$arrayElemAt' : ['$client.name', 0]},
                 'shipping_year': '$_id.shipping_year',
                 'shippong_month': '$_id.shipping_month',
                 'shipping_Id': '$shipping_ids',
-                'userEmail' : {'$arrayElemAt': ['$user.email', 0]}
+                'clientEmail' : {'$arrayElemAt': ['$client.email', 0]}
             }
         } 
     ]
 
     for document in database["Orders"].aggregate(pipelineAlarms):
         print(document)
-        counterAlarms += 1
+        alarmsCounter += 1
     
-    print(counterAlarms)
+    print(alarmsCounter)
 
-    return f"There is a total of {counterAlarms} emails to be sent"
+    return f"There is a total of {alarmsCounter} emails to be sent"
 
 @router.get("/initData")
 def initData(request: Request):
 
-    counterDocuments = 0
-    # usersList = generateUsers(50)
+    clientsCounter = 0
 
     #Access to database
     database: Database = request.app.database
-    # database["Orders"].insert_many(data.to_dict('records'))
+    database["Orders"].insert_many(data.to_dict('records'))
 
     # Build the aggregation pipelines
-    pipelineCompanies = [
+    pipelineCompanyClients = [
         {
-            #Filter documents that follow the "companyName + _ + number" expression
+            #Filter documents that follow the "companyClientName + _ + number" expression
             '$match': {
-            'order_vendor_dbname': {'$regex': patternCompanies}
+            'order_vendor_dbname': {'$regex': patternCompanyClients}
             }
         },
         {
@@ -160,7 +161,7 @@ def initData(request: Request):
                 'patternLike': {
                     '$regexFind': {
                         'input': '$_id',
-                        'regex': patternCompanies
+                        'regex': patternCompanyClients
                     }
                 }
             }
@@ -169,18 +170,18 @@ def initData(request: Request):
             #Decompose captured fields into their respective fields 
             '$project': {
                 '_id': 0,
-                'companyName':  {'$arrayElemAt' : ['$patternLike.captures', 0]},
-                'companyNumber': {'$arrayElemAt' : ['$patternLike.captures', 1]}
+                'companyClientName':  {'$arrayElemAt' : ['$patternLike.captures', 0]},
+                'companyIdentificationNumber': {'$arrayElemAt' : ['$patternLike.captures', 1]}
             }
         },
         
     ]
 
-    pipelineNaturalPersons = [
+    pipelineClients = [
         {
             #Filter documents that have no special characters and are 24 characters long, in other words, ObjectsIds
             '$match': {
-            'order_vendor_dbname': {'$regex': patternNaturalPersons}
+            'order_vendor_dbname': {'$regex': patternClients}
             }
         },
         {
@@ -194,26 +195,28 @@ def initData(request: Request):
             #Save the objectId element
             '$project':{
                 '_id':0,
-                'identificationCode': '$_id'
+                'identificationNumber': '$_id'
             }
         }
     ]
     
     #Aggregate to the database
     print("printing results")
-    usersList = []
+    clientsList = []
 
     #Generate Companies Info 
-    for document in database["Orders"].aggregate(pipelineCompanies):
-        user = generateCompanyInfo(document["companyName"], document["companyNumber"])
-        usersList.append(user)
+    for document in database["Orders"].aggregate(pipelineCompanyClients):
+        client = generateCompanyClientInfo(document["companyClientName"], document["companyIdentificationNumber"])
+        clientsCounter += 1
+        clientsList.append(client)
 
     #Generate Natural Persons Info
-    for document in database["Orders"].aggregate(pipelineNaturalPersons):
-        user = generateUserInfo(random.choice([True, False]), document["identificationCode"])
-        usersList.append(user)        
+    for document in database["Orders"].aggregate(pipelineClients):
+        client = generateClientInfo(random.choice([True, False]), document["identificationNumber"])
+        clientsCounter += 1
+        clientsList.append(client)        
 
-    print(counterDocuments)
-    database['Users'].insert_many(usersList)
+    print(clientsCounter)
+    database['Clients'].insert_many(clientsList)
       
-    return f"Sucessfully generated {counterDocuments}"
+    return f"Sucessfully generated {clientsCounter} clientes"
