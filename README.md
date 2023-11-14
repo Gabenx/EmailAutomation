@@ -23,6 +23,15 @@ Make sure you have Python installed on your system.
    
    ```bash
    ./venv/Scripts/Activate
+   ```
+   If you present the error message "Cannot create the venv because running scripts is disabled on this system" you should:
+   - Open PowerShell as an administrator.
+   - Run the following command to change the execution policy temporarily <br><br>
+     
+   ```powershell
+   Set-ExecutionPolicy RemoteSigned -Scope Process
+   ```
+   if prompted, type 'Y' to confirm and then try to create the virtual enviroment again.
    
 4. **Install the dependencies in the requirements.txt file**
    Use the following command to install the dependencies listed in the `requirements.txt` file inside your virtual enviroment
