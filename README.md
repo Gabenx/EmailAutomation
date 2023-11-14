@@ -25,11 +25,10 @@ Make sure you have Python installed on your system.
    ./venv/Scripts/Activate
    ```
    If you present the error message "Cannot be loaded because running scripts is disabled on this system" you should:
-   - Open PowerShell as an administrator.
-   - Run the following command to change the execution policy temporarily <br><br>
+   - Run the following command on the main file to change the execution policy temporarily <br><br>
      
-   ```powershell
-   Set-ExecutionPolicy RemoteSigned -Scope Process
+   ```bash
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
    ```
    if prompted, type 'Y' to confirm and then try to create the virtual enviroment again.
    
