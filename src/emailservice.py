@@ -14,49 +14,52 @@ sender_email = config['SENDER_EMAIL']
 
 #This function defines the structure of the mail based on the document info
 def formatMethod(toEmail : str, toName : str, shippingYear : str, shippingMonth :str, shippingIds : []):
+  try:
+    #Create a multipart message for sending both plain text and HTML content
+    message = MIMEMultipart('alternative')
 
-  #Create a multipart message for sending both plain text and HTML content
-  message = MIMEMultipart('alternative')
+    # Set email header details
+    message['Subject'] = 'Returned and cancelled orders info'
+    message['From'] = sender_email
+    message['To'] = toEmail
 
-  # Set email header details
-  message['Subject'] = 'Returned and cancelled orders info'
-  message['From'] = sender_email
-  message['To'] = toEmail
+    #Calculate the total number of orders and create a string of shipping ids
+    totalOrders = len(shippingIds)
+    ordersStrings = ", ".join(shippingIds)
 
-  #Calculate the total number of orders and create a string of shipping ids
-  totalOrders = len(shippingIds)
-  ordersStrings = ", ".join(shippingIds)
+    #Plain text version of the email body
+    text = f"""\
+    Hi {toName}, How are you?
+    We are reaching to you because you have cancelled or returned a total of {totalOrders} orders in {shippingYear}/{shippingMonth}.
+    These are the shipping ids of the orders you have cancelled or returned: {ordersStrings}
+    """
 
-  #Plain text version of the email body
-  text = f"""\
-  Hi {toName}, How are you?
-  We are reaching to you because you have cancelled or returned a total of {totalOrders} orders in {shippingYear}/{shippingMonth}.
-  These are the shipping ids of the orders you have cancelled or returned: {ordersStrings}
-  """
+    #HTML version of the email body
+    html = f"""\
+    <html>
+      <body>
+        <p>Hi {toName}<br>
+          How are you?<br>
+          We are reaching to you because you have cancelled or returned a total of {totalOrders} orders in {shippingYear}/{shippingMonth}.<br>
+          These are the shipping ids of the orders you have cancelled or returned: {ordersStrings}
+        </p>
+      </body>
+    </html>
+    """
 
-  #HTML version of the email body
-  html = f"""\
-  <html>
-    <body>
-      <p>Hi {toName}<br>
-        How are you?<br>
-        We are reaching to you because you have cancelled or returned a total of {totalOrders} orders in {shippingYear}/{shippingMonth}.<br>
-        These are the shipping ids of the orders you have cancelled or returned: {ordersStrings}
-      </p>
-    </body>
-  </html>
-  """
+    #Create MIMEText objects for the plain text and HTML parts of the message
+    part1 = MIMEText(text, 'plain')
+    part2 = MIMEText(html, 'html') 
 
-  #Create MIMEText objects for the plain text and HTML parts of the message
-  part1 = MIMEText(text, 'plain')
-  part2 = MIMEText(html, 'html') 
+    #Attach the text and HTML parts to the message
+    message.attach(part1)
+    message.attach(part2) 
 
-  #Attach the text and HTML parts to the message
-  message.attach(part1)
-  message.attach(part2) 
-
-  #Return the complete message object
-  return message   
+    #Return the complete message object
+    return message   
+  except Exception as e:
+     print(e)
+     return "An exception was encountered. The mail message wasn't properly formatted."
 
 def sendEmail(toEmail : str, toName : str, shippingYear : str, shippingMonth :str, shippingIds : []):
 

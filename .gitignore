@@ -75,8 +75,6 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# Enviroment
-.env
 
 # Virtual enviroment
 venv/
