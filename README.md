@@ -24,7 +24,7 @@ Make sure you have Python installed on your system.
    ```bash
    ./venv/Scripts/Activate
    ```
-   If you present the error message "Cannot create the venv because running scripts is disabled on this system" you should:
+   If you present the error message "Cannot be loaded because running scripts is disabled on this system" you should:
    - Open PowerShell as an administrator.
    - Run the following command to change the execution policy temporarily <br><br>
      
