@@ -27,4 +27,4 @@ Make sure you have Python installed on your system.
 ## Running the Project
 
 For detailed instructions on running the project, please refer to the main Jupyter Notebook:
-- [Main.ipynb](Main.ipynb)
+- [Main.ipynb](src/Main.ipynb)
