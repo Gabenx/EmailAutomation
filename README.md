@@ -30,13 +30,12 @@ Make sure you have Python installed on your system.
    ```bash
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
    ```
-   if prompted, type 'Y' to confirm and then try to create the virtual enviroment again.
    
 4. **Install the dependencies in the requirements.txt file**
    Use the following command to install the dependencies listed in the `requirements.txt` file inside your virtual enviroment
 
    ```bash
-   pip install -r requirements.txt
+   python -m pip install -r .\requirements.txt
 
 ## Running the Project
 
