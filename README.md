@@ -10,7 +10,7 @@ Make sure you have Python installed on your system.
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/Gabenx/RocketfyProjectEnv.git
+   git clone https://github.com/Gabenx/EmailAutomation.git
 
 2. **Create a Virtual Environment:**
    Create a virtual environment using the following command in the root folder of your project
