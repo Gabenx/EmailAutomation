@@ -1,4 +1,4 @@
-# RocketfyProjectEnv
+# EmailAutomation
 
 Welcome to my Project! This guide will help you set up a virtual environment and install project dependencies.
 
